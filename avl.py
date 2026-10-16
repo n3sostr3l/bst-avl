@@ -58,10 +58,11 @@ class BalancingBST:
     def _update_height(self, root: Node | str = "root"):
         if root == "root": root = self.root
         
-        if not root: return (-1, -1)
+        if root is None: 
+            return 
                 
-        if root.left: root.left_h = max(self.height(root.left)) + 1 if root.left else 0
-        if root.right: root.right_h = max(self.height(root.right)) + 1 if root.right else 0
+        root.left_h = max(self.height(root.left)) + 1 if root.left else 0
+        root.right_h = max(self.height(root.right)) + 1 if root.right else 0
     
     def exists(self, key: int, root: Node | str = "root"):
         if root == "root": root = self.root
@@ -108,6 +109,11 @@ class BalancingBST:
             parent.left = y
         else:
             parent.right = y
+        
+        self._update_height(x)
+        self._update_height(y)
+        
+        return y
     
     def right(self, key: int = None, root: Node | str = "root"):
         if root == "root": root = self.root
@@ -131,7 +137,7 @@ class BalancingBST:
             
         if root is None or root.left is None:
             return
-        
+    
         x = root
         y = root.left
         
@@ -146,29 +152,37 @@ class BalancingBST:
             parent.left = y
         else:
             parent.right = y
+        
+        self._update_height(x)
+        self._update_height(y) 
+        
+        return y
                 
     def _balance(self, root: Node | str = "root"):
         
-            if root  == "root": root = self.root
+        if root  == "root": root = self.root
         
-            if self._bal(root) == 2:
-                if self._bal(root.right) >= 0:
-                    self.left(root=root)
-                else:
-                    self.right(root=root.right)
-                    self.left(root=root)
-            if self._bal(root) == -2:
-                if self._bal(root.left) <= 0:
-                    self.right(root=root)
-                else:
-                    self.left(root=root.left)
-                    self.right(root=root)
-            self._update_height()            
+        self._update_height(root)
+        
+        if self._bal(root) == 2:
+            if self._bal(root.right) >= 0:
+                root = self.left(root=root)
+            else:
+                self.right(root=root.right)
+                root = self.left(root=root)
+        if self._bal(root) == -2:
+            if self._bal(root.left) <= 0:
+                root = self.right(root=root)
+            else:
+                self.left(root=root.left)
+                root = self.right(root=root)
+        print("BALANCE", root.key, root.left_h, root.right_h, self._bal(root))
+        return root          
     
     def imbalanced_insert(self, key: int, root: Node| str = "root"):
         if not self.root: 
             self.root = Node(key, None, None)
-            return
+            return self.root
         
         if root == "root": 
             root = self.root 
@@ -177,19 +191,24 @@ class BalancingBST:
             if root.right is None: 
                 root.right = Node(key, None, None)
             else:
-                self.imbalanced_insert(key, root.right)
-        if key < root.key:
+                root.right = self.imbalanced_insert(key, root.right)
+        elif key < root.key:
             if root.left is None:
                 root.left = Node(key, None, None)
             else:
-                self.imbalanced_insert(key, root.left) 
-        self._update_height(root)
+                root.left = self.imbalanced_insert(key, root.left) 
+        else: 
+            return root
+        
+        return self._balance(root)
         
     def insert(self, key: int, root: Node | str = "root"):
-        self.imbalanced_insert(key, root)
-        self._update_height(root)
-        self._balance()
+        if root == "root":
+            self.root = self.imbalanced_insert(key, self.root)
+        else:
+            return self.imbalanced_insert(key)
         
+        return self.root
         
     def delete(self, key: int, root: Node | str = "root"):
         if root == "root":
@@ -211,10 +230,8 @@ class BalancingBST:
             m = self._min_key(root.right)
             root.key = m.key
             root.right = self.delete(m.key, root.right)
-
-        self._update_height(root)
-        self._balance(root)
-        return root
+            
+        return self._balance(root)
             
         
     def print(self, _root: Node | str = "root"):
